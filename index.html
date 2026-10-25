@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Melanoma HUSJR</title>
+<meta name="description" content="Estadiaje de melanoma según la Guía HUSJR v1 05/2026 y EADO 2024">
+<meta name="theme-color" content="#1f5f6b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Melanoma HUSJR">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#fffdf9; --fg:#1d2126; --muted:#5f6670; --line:#d9d4c8;
+  --accent:#1f5f6b; --accent-soft:#dcecee; --warn:#9a5b00; --warn-soft:#fbeed2;
+  --crit:#9b2c2c; --crit-soft:#f8dddd; --ok:#2e6b3a; --ok-soft:#dcefdf;
+  --font-body:"Source Sans 3","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15181c; --panel:#1d2127; --fg:#e8e6e0; --muted:#a5a9b0; --line:#343a42;
+  --accent:#6fb9c4; --accent-soft:#1f3a40; --warn:#e8b058; --warn-soft:#3d2f14;
+  --crit:#f08a8a; --crit-soft:#3f2020; --ok:#8fcf9a; --ok-soft:#1f3a26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15181c; --panel:#1d2127; --fg:#e8e6e0; --muted:#a5a9b0; --line:#343a42;
+  --accent:#6fb9c4; --accent-soft:#1f3a40; --warn:#e8b058; --warn-soft:#3d2f14;
+  --crit:#f08a8a; --crit-soft:#3f2020; --ok:#8fcf9a; --ok-soft:#1f3a26; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.45;display:flex;flex-direction:column}
+.appbar{position:sticky;top:0;z-index:5;background:var(--accent);color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:12px}
+.appbar img{width:32px;height:32px;border-radius:8px}
+.appbar h1{font-size:17px;margin:0;font-weight:600;line-height:1.2}
+.appbar small{display:block;font-size:12px;opacity:.85;font-weight:400}
+main{flex:1;overflow:auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.tab{display:none} .tab.active{display:block}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px;margin:0 0 14px;background:var(--panel)}
+legend{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 4px}
+.row{display:grid;grid-template-columns:1fr;gap:4px;margin-top:10px}
+.row label{font-size:13px;color:var(--muted);margin-top:6px}
+select,input[type=number]{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+input[type=number]{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+select:focus,input:focus,button:focus{outline:2px solid var(--accent);outline-offset:1px}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+button{font:inherit;font-size:15px;padding:11px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;flex:1}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+nav.bottom{position:sticky;bottom:0;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.bottom button{border:0;border-radius:0;background:none;padding:8px 4px 6px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;flex:initial}
+nav.bottom button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.bottom button.on{color:var(--accent);font-weight:600}
+.next{margin-top:4px}
+.report{min-width:0}
+.banner{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--accent-soft);margin-bottom:14px}
+.banner .mode{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;width:100%}
+.banner .stage{font-size:19px;font-weight:600}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.03em}
+.pill.low{background:var(--ok-soft);color:var(--ok)} .pill.mid{background:var(--warn-soft);color:var(--warn)} .pill.high{background:var(--crit-soft);color:var(--crit)} .pill.na{background:var(--line);color:var(--muted)}
+section.block{border-top:1px solid var(--line);padding:12px 0 10px}
+section.block h2{font-size:15px;margin:0 0 6px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+section.block h2 .n{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+section.block ul{margin:4px 0 0;padding-left:18px} section.block li{margin:4px 0;font-size:15px}
+.src{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.flag{border-left:3px solid var(--warn);background:var(--warn-soft);padding:8px 10px;border-radius:0 8px 8px 0;margin:6px 0}
+.flag.crit{border-color:var(--crit);background:var(--crit-soft)}
+.scen{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0;background:var(--panel)}
+.scen h3{margin:0 0 4px;font-size:14px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px;min-width:560px}
+th,td{text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+details{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:16px;background:var(--panel)}
+summary{cursor:pointer;font-weight:600} details ol{padding-left:20px} details li{margin:6px 0;font-size:14px}
+footer{margin-top:18px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.form{display:contents}
+#t1afactors[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="appbar"><img src="icon-192.png" alt=""><h1>Melanoma HUSJR<small>Guía v1 05/2026 · EADO 2024 · lógica 1.0</small></h1></header>
+<main>
+<div class="form">
+<div class="tab active" id="tab-primario"><fieldset>
+    <legend>Tumor primario (AP)</legend>
+    <div class="row">
+      <label for="tipo">Tipo</label>
+      <select id="tipo">
+        <option value="inv">Invasivo (Breslow)</option>
+        <option value="tis">In situ (Tis)</option>
+        <option value="tx">Primario desconocido (Tx)</option>
+      </select>
+      <label for="breslow">Breslow (mm)</label>
+      <input id="breslow" type="number" step="0.01" min="0" placeholder="p. ej. 1,2" inputmode="decimal">
+      <label for="ulc">Ulceración</label>
+      <select id="ulc"><option value="u">Desconocida</option><option value="0">No</option><option value="1">Sí</option></select>
+      <p class="hint">Breslow con dos decimales se redondea a 0,1 mm (AJCC 8.ª). Los límites de banda están en 0,8 · 1,0 · 2,0 · 4,0.</p>
+    </div>
+    <div class="row" id="t1afactors">
+      <label for="mit">Mitosis (T1a)</label>
+      <select id="mit"><option value="u">Desconocidas</option><option value="0">≤ 2/mm²</option><option value="1">&gt; 2/mm²</option></select>
+      <label for="edad">Edad &lt; 42 años</label>
+      <select id="edad"><option value="u">Desconocida</option><option value="0">No</option><option value="1">Sí</option></select>
+      <label for="ilv">Invasión linfovascular</label>
+      <select id="ilv"><option value="u">Desconocida</option><option value="0">No</option><option value="1">Sí</option></select>
+      <p class="hint">Solo deciden la BSGC en T1a (&lt; 0,8 mm no ulcerado).</p>
+    </div>
+    <div class="row">
+      <label for="loc">Localización</label>
+      <select id="loc">
+        <option value="cut">Cutánea (tronco / extremidades)</option>
+        <option value="cara">Cara (párpado, pabellón auricular)</option>
+        <option value="acral">Acral</option>
+        <option value="mucosa">Mucosa</option>
+      </select>
+      <label for="sub">Subtipo</label>
+      <select id="sub">
+        <option value="otro">Otro / no especificado</option>
+        <option value="lm">Lentigo maligno</option>
+        <option value="desmo">Desmoplásico</option>
+      </select>
+      <label for="sat">Satélites / microsatélites / en tránsito</label>
+      <select id="sat"><option value="u">Desconocido</option><option value="0">No</option><option value="1">Sí</option></select>
+      <label for="regr">Regresión</label>
+      <select id="regr"><option value="u">Desconocida</option><option value="0">No</option><option value="1">Sí</option></select>
+    </div>
+  </fieldset><div class="btns"><button class="primary next" type="button" data-go="ganglios">Siguiente: ganglios</button></div></div>
+<div class="tab" id="tab-ganglios"><fieldset>
+    <legend>Exploración y ganglios clínicos</legend>
+    <div class="row">
+      <label for="expl">Exploración ganglionar</label>
+      <select id="expl">
+        <option value="u">No registrada</option>
+        <option value="neg">Negativa</option>
+        <option value="sosp">Sospechosa, sin confirmar</option>
+        <option value="pos">Positiva confirmada (PAAF / BAG)</option>
+      </select>
+      <label for="cn">Ganglios clínicos (si confirmados)</label>
+      <select id="cn"><option value="1">1</option><option value="2">2–3</option><option value="4">≥ 4 o conglomerado</option></select>
+      <label for="inmuno">Inmunosupresión</label>
+      <select id="inmuno"><option value="0">No</option><option value="1">Sí</option></select>
+    </div>
+  </fieldset><div class="btns"><button type="button" data-go="primario">Atrás</button><button class="primary" type="button" data-go="pruebas">Siguiente: pruebas</button></div></div>
+<div class="tab" id="tab-pruebas"><fieldset>
+    <legend>Resultados de pruebas (modo definitivo)</legend>
+    <div class="row">
+      <label for="bsgc">BSGC</label>
+      <select id="bsgc"><option value="u">No realizada</option><option value="neg">Negativa</option><option value="pos">Positiva</option></select>
+      <label for="bn">Ganglios centinela +</label>
+      <select id="bn"><option value="1">1</option><option value="2">2–3</option><option value="4">≥ 4</option></select>
+      <label for="dep">Depósito máximo</label>
+      <select id="dep"><option value="u">Desconocido</option><option value="le">≤ 0,1 mm</option><option value="gt">&gt; 0,1 mm</option></select>
+      <label for="ece">Extensión extracapsular</label>
+      <select id="ece"><option value="u">Desconocida</option><option value="0">No</option><option value="1">Sí</option></select>
+      <label for="eco">Ecografía ganglionar</label>
+      <select id="eco"><option value="u">No realizada</option><option value="neg">Negativa</option><option value="sosp">Sospechosa, sin confirmar</option><option value="pos">Positiva confirmada</option></select>
+      <label for="tc">TC tóraco-abdominal</label>
+      <select id="tc"><option value="u">No realizada</option><option value="neg">Negativa</option><option value="pos">Metástasis a distancia</option></select>
+      <label for="rm">RM cerebral</label>
+      <select id="rm"><option value="u">No realizada</option><option value="neg">Negativa</option><option value="pos">Metástasis cerebrales</option></select>
+      <label for="pet">PET-TC</label>
+      <select id="pet"><option value="u">No realizada</option><option value="neg">Negativa</option><option value="pos">Metástasis a distancia</option></select>
+    </div>
+  </fieldset><div class="btns"><button type="button" data-go="ganglios">Atrás</button><button class="primary" type="button" data-go="informe">Ver informe</button></div></div>
+</div>
+<div class="tab" id="tab-informe">
+  <div class="btns"><button class="primary" id="btnCalc" type="button">Recalcular</button><button id="btnCopy" type="button">Copiar</button><button id="btnReset" type="button">Limpiar</button></div>
+  <div class="report" id="report"></div>
+</div>
+</main>
+<nav class="bottom">
+  <button type="button" data-go="primario" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></svg>Primario</button>
+  <button type="button" data-go="ganglios"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="12" r="3"/><circle cx="8" cy="18" r="3"/><path d="M9.5 8.5l5 2M10.5 16l4-2.5"/></svg>Ganglios</button>
+  <button type="button" data-go="pruebas"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Pruebas</button>
+  <button type="button" data-go="informe"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 13h8M8 17h8"/></svg>Informe</button>
+</nav>
+<div class="toast" id="toast">Copiado</div>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const F=['tipo','breslow','ulc','mit','edad','ilv','loc','sub','sat','regr','expl','cn','inmuno','bsgc','bn','dep','ece','eco','tc','rm','pet'];
+const SRC={
+  g_pruebas:'Guía HUSJR · Pruebas de estadificación',
+  g_clas:'Guía HUSJR · Clasificación de riesgo',
+  g_amp:'Guía HUSJR · Ampliación de márgenes',
+  g_esp:'Guía HUSJR · Localizaciones especiales',
+  g_linf:'Guía HUSJR · Linfadenectomía completa',
+  g_cn:'Guía HUSJR · Enfermedad clínica o radiológica',
+  g_trat:'Guía HUSJR · Tratamiento por estadios',
+  g_neo:'Guía HUSJR · Neoadyuvancia',
+  g_seg:'Guía HUSJR · Tabla de seguimiento',
+  g_quien:'Guía HUSJR · Quién sigue (nota final)',
+  g_ac:'Guía HUSJR · AC Reus',
+  e_marg:'EADO 2024 Trat. · Rec. 3–4',
+  e_slnb:'EADO 2024 Trat. · 1.5–1.6',
+  e_eco:'EADO 2024 Diag. · Rec. 2',
+  e_img:'EADO 2024 Diag. · 6. Staging examinations',
+  e_ajcc:'EADO 2024 Diag. · tabla AJCC 8.ª'
+};
+
+function round1(x){return Math.round(x*10)/10;}
+
+// T según guía del centro (bandas) y AJCC 8.ª (redondeo a 0,1 mm)
+function tCat(b,ulc){ // ulc: '0','1','u'
+  if(b<0.8) return ulc==='1'?'T1b':(ulc==='0'?'T1a':'T1?');
+  if(b<=1.0) return 'T1b';
+  const base=b<=2.0?'T2':(b<=4.0?'T3':'T4');
+  return ulc==='1'?base+'b':(ulc==='0'?base+'a':base+'?');
+}
+// Estadio clínico/patológico N0 (AJCC 8.ª, vía tabla EADO)
+const N0STAGE={clin:{T1a:'IA',T1b:'IB',T2a:'IB',T2b:'IIA',T3a:'IIA',T3b:'IIB',T4a:'IIB',T4b:'IIC'},
+               path:{T1a:'IA',T1b:'IA',T2a:'IB',T2b:'IIA',T3a:'IIA',T3b:'IIB',T4a:'IIB',T4b:'IIC'}};
+// Estadio III patológico (AJCC 8.ª)
+function stageIII(T,N){
+  const g=T==='T0'?0:(['T1a','T1b','T2a'].includes(T)?1:(['T2b','T3a'].includes(T)?2:(['T3b','T4a'].includes(T)?3:4)));
+  if(g===0){ if(['N1b','N1c'].includes(N))return 'IIIB'; if(['N2b','N2c','N3b','N3c'].includes(N))return 'IIIC'; return 'III (T0 con '+N+': no consta en las fuentes)'; }
+  if(g===1){ if(['N1a','N2a'].includes(N))return 'IIIA'; if(['N1b','N1c','N2b'].includes(N))return 'IIIB'; return 'IIIC'; }
+  if(g===2){ if(['N1a','N1b','N1c','N2a','N2b'].includes(N))return 'IIIB'; return 'IIIC'; }
+  if(g===3){ return 'IIIC'; }
+  if(g===4){ return N.startsWith('N3')?'IIID':'IIIC'; }
+  return 'III';
+}
+function riskOf(stage){
+  if(stage==='0')return ['in situ','na'];
+  if(/^I[AB]$/.test(stage))return ['bajo','low'];
+  if(stage==='IIA')return ['intermedio','mid'];
+  if(/^II[BC]$/.test(stage)||stage.startsWith('III'))return ['alto','high'];
+  if(stage.startsWith('IV'))return ['estadio IV','high'];
+  return ['—','na'];
+}
+const li=(t,s)=>`<li>${t}${s?' <span class="src">[' +s+']</span>':''}</li>`;
+const flag=(t,c)=>`<div class="flag${c?' crit':''}">${t}</div>`;
+
+function calc(){
+  const v={};F.forEach(k=>v[k]=$(k).value);
+  const miss=[],flags=[],out=[];
+  const tipo=v.tipo;
+  let b=parseFloat(String(v.breslow).replace(',','.'));
+  if(tipo==='inv'&&(isNaN(b)||b<=0)){ $('report').innerHTML=flag('Introduce el Breslow en mm (dato mínimo). Para in situ o primario desconocido cambia el tipo.',true); return; }
+  if(tipo==='inv'){ const r=round1(b); if(r!==b) flags.push(`Breslow ${b} mm redondeado a ${r} mm (AJCC 8.ª, 0,1 mm). Si el informe AP dice p. ej. 0,75 o 1,05 mm, revisa la banda con AP.`); b=r; }
+
+  // Modo
+  const anyTest=['bsgc','eco','tc','rm','pet'].some(k=>v[k]!=='u');
+  const mode=anyTest?'definitivo':'provisional';
+  const tag=mode==='provisional'?'PROVISIONAL':'DEFINITIVO';
+
+  // T escenarios
+  let Ts=[];
+  if(tipo==='tis')Ts=['Tis'];
+  else if(tipo==='tx')Ts=['T0'];
+  else{
+    const t=tCat(b,v.ulc);
+    if(t.endsWith('?')){ Ts=[t.replace('?','a'),t.replace('?','b')]; miss.push('Ulceración: decide '+Ts[0]+' frente a '+Ts[1]+'.'); }
+    else Ts=[t];
+  }
+  const isT1a=Ts.length===1&&Ts[0]==='T1a';
+  const T1aPossible=Ts.includes('T1a');
+
+  // Satélites
+  const satKnown=v.sat!=='u';
+  if(!satKnown&&tipo!=='tis')miss.push('Satelitosis / microsatélites / en tránsito (define N1c–N3c y criterio de linfadenectomía).');
+  if(v.expl==='u'&&tipo!=='tis')miss.push('Exploración ganglionar clínica (cN).');
+
+  // M
+  const M1=['tc','rm','pet'].some(k=>v[k]==='pos');
+  const distantDone=['tc','rm','pet'].some(k=>v[k]!=='u');
+
+  // N
+  let N='N0',Nnote='',nodal='none',pathStaged=false;
+  const clinPos=v.expl==='pos'||v.eco==='pos';
+  const sat=v.sat==='1';
+  if(clinPos){
+    nodal='clin'; pathStaged=true;
+    const c=v.cn;
+    if(sat) N=c==='1'?'N2c':'N3c'; else N=c==='1'?'N1b':(c==='2'?'N2b':'N3b');
+    Nnote='ganglios clínicamente detectados y confirmados';
+  } else if(v.bsgc==='pos'){
+    nodal='slnb'; pathStaged=true;
+    const n=v.bn;
+    if(sat) N=n==='1'?'N2c':'N3c'; else N=n==='1'?'N1a':(n==='2'?'N2a':'N3a');
+    Nnote='BSGC positiva';
+  } else if(sat){
+    nodal='sat'; pathStaged=true; N='N1c'; Nnote='satelitosis sin ganglios afectos';
+  } else if(v.bsgc==='neg'){
+    pathStaged=true; N='pN0';
+  } else N='cN0';
+  if(v.expl==='sosp'||v.eco==='sosp')flags.push('Ganglio sospechoso sin confirmar: confirmar con PAAF o BAG antes de estadiar como cN+ (según EADO Diag. 6). Hasta entonces se estadia como N0 con alerta.');
+
+  // Estadios por escenario
+  const scen=Ts.map(T=>{
+    let st,note='';
+    if(M1){st='IV';note='M1 por imagen; subcategoría M1a–d no consta en la guía del centro.';}
+    else if(T==='Tis')st='0';
+    else if(N==='N0'||N==='cN0'||N==='pN0'){ st=T==='T0'?'— (T0 N0 no es un estadio)':(N==='pN0'?N0STAGE.path[T]:N0STAGE.clin[T]); if(N==='cN0'&&T==='T1b')note='clínico IB; si BSGC negativa pasa a patológico IA.'; }
+    else st=stageIII(T,N);
+    const [rk,cls]=riskOf(st);
+    return {T,st,rk,cls,note};
+  });
+  const Tmain=Ts[0];
+  const thick=tipo==='inv'?b:(tipo==='tis'?0:null);
+
+  // Pendientes (modo definitivo)
+  const pend=[];
+  const needsSLNB=(tipo==='inv'&&b>0.8)||(T1aPossible&&(v.mit==='1'||v.edad==='1'||v.ilv==='1'));
+  if(mode==='definitivo'){
+    if(needsSLNB&&v.bsgc==='u'&&!clinPos)pend.push('BSGC');
+    const highAny=scen.some(s=>/^II[BC]$|^III/.test(s.st));
+    if(highAny&&!M1){ if(v.tc==='u')pend.push('TC tóraco-abdominal'); if(v.rm==='u')pend.push('RM cerebral'); }
+  }
+
+  // ---------- 1 Estadio ----------
+  let h=`<div class="banner"><span class="mode">Modo ${mode} · ${tag}</span>`;
+  h+=scen.map(s=>`<span class="stage">${s.T} ${N} ${M1?'M1':'M0'} → ${s.st}${pend.length?' (pendiente de '+pend.join(', ')+')':''}</span> <span class="pill ${s.cls}">${s.rk}</span>`).join('<span class="src"> · o bien · </span>');
+  h+=`</div>`;
+  if(flags.length)h+=flags.map(f=>flag(f)).join('');
+
+  out.push(`<section class="block"><h2><span class="n">1</span>Estadio ${mode==='provisional'?'provisional':'definitivo'} AJCC 8.ª y riesgo</h2><ul>`
+    +scen.map(s=>li(`${s.T} ${N} ${M1?'M1':'M0'} → estadio <b>${s.st}</b>, riesgo <b>${s.rk}</b>${s.note?' — '+s.note:''}`,(s.st.startsWith('III')||s.st==='IV')?SRC.e_ajcc:SRC.g_clas)).join('')
+    +(Nnote?li('N por '+Nnote+'.',SRC.e_ajcc):'')
+    +(pend.length?li('<b>Pendiente de '+pend.join(', ')+'</b>: la guía exige esta prueba para cerrar el estadio.',SRC.g_pruebas):'')
+    +li('Grupos de la tabla del centro: in situ · bajo (IA–IB) · intermedio (IIA) · alto (IIB, IIC, III) · IV resecado.',SRC.g_seg)
+    +`</ul></section>`);
+
+  // ---------- 2 Cirugía ----------
+  let c=[];
+  if(tipo==='tx')c.push(li('Primario desconocido: exploración DERMA + OFT + FGC/FCC + ORL.',SRC.g_pruebas));
+  else{
+    if(v.sub==='lm')c.push(li('Lentigo maligno: margen 1 cm o control micrográfico.',SRC.g_esp));
+    else if(tipo==='tis')c.push(li('In situ: la tabla de márgenes del centro no es legible en el documento; según EADO, margen 0,5 cm.',SRC.e_marg));
+    else c.push(li(`Margen lateral ${b<=2?'<b>1 cm</b> (Breslow ≤ 2 mm)':'<b>2 cm</b> (Breslow > 2 mm)'}; medido clínicamente e incluyendo el margen de la biopsia inicial. La tabla de márgenes del centro no es legible en el documento: se aplica EADO.`,SRC.e_marg));
+    if(v.loc!=='cut')c.push(li(`Localización ${v.loc==='cara'?'facial':v.loc}: valorar Mohs o márgenes ajustados para preservar función/estética${v.loc!=='cara'?'; según EADO, acral/mucoso con margen ≥ 1 cm o control micrográfico':''}.`,SRC.g_esp+' · '+SRC.e_marg));
+    if(tipo==='inv')c.push(li('Ampliación en 4–6 semanas, hasta fascia muscular, simultánea con la BSGC si procede.',SRC.g_amp));
+    // BSGC
+    if(clinPos)c.push(li('BSGC no procede: ganglio clínico/ecográfico confirmado (cN+). Ver linfadenectomía.',SRC.e_eco+' · '+SRC.g_cn));
+    else if(v.bsgc!=='u')c.push(li(`BSGC ya realizada: ${v.bsgc==='neg'?'negativa; no precisa más cirugía ganglionar':'positiva; ver punto de linfadenectomía'}.`,SRC.e_slnb));
+    else if(tipo==='inv'&&b>0.8)c.push(li('<b>BSGC: SÍ</b>, obligatoria (Breslow > 0,80 mm).',SRC.g_pruebas));
+    else if(tipo==='inv'&&b===0.8)c.push(li('<b>Breslow 0,8 mm exacto</b>: la guía dice "> 0,80" para BSGC obligatoria y clasifica 0,8–1,0 como T1b. Zona gris: decidir en consulta/comité.',SRC.g_pruebas),);
+    else if(T1aPossible){
+      const fac=[v.edad==='1'?'edad < 42':null,v.ilv==='1'?'ILV+':null,v.mit==='1'?'mitosis > 2/mm²':null].filter(Boolean);
+      const unk=[v.edad==='u'?'edad':null,v.ilv==='u'?'ILV':null,v.mit==='u'?'mitosis':null].filter(Boolean);
+      if(fac.length)c.push(li(`<b>BSGC: SÍ</b> en T1a seleccionado por ${fac.join(', ')}.`,SRC.g_pruebas));
+      else if(unk.length){c.push(li(`BSGC en T1a: pendiente de ${unk.join(', ')}.`,SRC.g_pruebas));unk.forEach(u=>miss.push(u.charAt(0).toUpperCase()+u.slice(1)+' (criterio de BSGC en T1a).'));}
+      else c.push(li('<b>BSGC: NO</b> (T1a sin factores de mal pronóstico).',SRC.g_pruebas));
+      if(Ts.includes('T1b'))c.push(li('Si resulta T1b (ulcerado): BSGC indicada.',SRC.g_pruebas));
+      if(v.regr==='1')c.push(li('Regresión presente: la guía la menciona como factor pero la frase está incompleta en el documento ("es FP positivo"). No se aplica como criterio automático; revisar con AP.',SRC.g_pruebas));
+    }
+    else if(tipo==='tis')c.push(li('BSGC: no procede en melanoma in situ.',SRC.g_clas));
+  }
+  // Linfadenectomía
+  if(clinPos){
+    c.push(li('<b>Linfadenectomía terapéutica</b>: estándar en cN+ sin M1. Si ganglio macroscópico, valorar neoadyuvancia SIEMPRE vía reunión de secciones / comité.',SRC.g_cn+' · '+SRC.g_neo));
+  } else if(v.bsgc==='pos'){
+    const crit=[v.ece==='1'?'extensión extracapsular':null,sat?'microsatélites':null,v.bn==='4'?'> 3 ganglios':null,v.inmuno==='1'?'inmunosupresión':null].filter(Boolean);
+    if(crit.length)c.push(li(`<b>Linfadenectomía completa: SÍ</b> (criterio: ${crit.join(', ')}).`,SRC.g_linf));
+    else c.push(li('<b>Linfadenectomía: NO</b> sistemática (MSLT-II, DeCOG-SLT); seguimiento ecográfico del lecho. Revisar también afectación > 2 niveles ganglionares (no recogido en el formulario).',SRC.g_linf));
+    if(v.ece==='u')miss.push('Extensión extracapsular del centinela (criterio de linfadenectomía).');
+  }
+  out.push(`<section class="block"><h2><span class="n">2</span>Cirugía</h2><ul>${c.join('')}</ul></section>`);
+
+  // ---------- 3 Pruebas ----------
+  let p=[];
+  const stMax=scen.map(s=>s.st);
+  const anyHigh=stMax.some(s=>/^II[BC]$|^III|^IV/.test(s));
+  const anyIBplus=Ts.some(T=>T!=='Tis'&&T!=='T1a');
+  if(tipo==='tis')p.push(li('No se recomiendan pruebas. Ecografía regional solo si la exploración no es fiable.',SRC.g_seg));
+  else{
+    if(anyIBplus){
+      if(v.eco==='u')p.push(li('<b>Ecografía ganglionar regional y en tránsito</b>: según EADO, desde pT1b. La guía del centro dice que IB "no requiere pruebas complementarias": conflicto; se muestra EADO como complemento, decide el centro.',SRC.e_eco+' · '+SRC.g_clas));
+      else p.push(li(`Ecografía ganglionar: ${ {neg:'negativa',sosp:'sospechosa (confirmar con PAAF/BAG)',pos:'positiva confirmada'}[v.eco]}.`,SRC.e_eco));
+    } else p.push(li('T1a: no precisa imagen ni ecografía con exploración negativa.',SRC.e_img+' · '+SRC.g_clas));
+    if(anyHigh){
+      p.push(li(`<b>TC tóraco-abdominal + RM cerebral</b> (IIB–III)${v.tc!=='u'||v.rm!=='u'?': TC '+({u:'pendiente',neg:'negativa',pos:'M1'})[v.tc]+', RM '+({u:'pendiente',neg:'negativa',pos:'M1'})[v.rm]:''}.`,SRC.g_pruebas));
+    } else p.push(li('TC + RM: no indicadas (solo IIB–III).',SRC.g_pruebas));
+    const petWhy=[tipo==='inv'&&b>4?'Breslow > 4 mm':null,v.loc==='acral'?'acral':null,v.loc==='mucosa'?'mucoso':null,tipo==='tx'?'primario desconocido':null,M1?'M1':null].filter(Boolean);
+    if(petWhy.length)p.push(li(`<b>Valorar PET-TC</b> (${petWhy.join(', ')})${v.pet!=='u'?': '+({neg:'negativa',pos:'positiva'})[v.pet]:''}.`,SRC.g_pruebas));
+    else p.push(li('PET-TC: no indicada (criterios: > 4 mm, acral, mucoso, primario desconocido, M1).',SRC.g_pruebas));
+    p.push(li(M1?'LDH: según EADO, en estadio IV.':'Analítica de estadificación: no consta en la guía del centro; según EADO, ninguna de rutina salvo LDH en estadio IV. S100 y analítica solo en seguimiento (tabla del centro).',SRC.e_img+' · '+SRC.g_seg));
+  }
+  out.push(`<section class="block"><h2><span class="n">3</span>Pruebas complementarias</h2><ul>${p.join('')}</ul></section>`);
+
+  // ---------- 4 Escenarios (provisional) / Tratamiento (definitivo) ----------
+  if(mode==='provisional'&&tipo!=='tis'){
+    let s='';
+    scen.forEach(sc=>{
+      const T=sc.T;
+      const n0=T==='T0'?'—':N0STAGE.path[T];
+      s+=`<div class="scen"><h3>${T}</h3><ul>`;
+      s+=li(`BSGC negativa + eco negativa → <b>${n0}</b>. Sin linfadenectomía. ${/^II[BC]$/.test(n0)?'Adyuvancia pembrolizumab 600 mg/6 sem × 1 año (IIB–IIC).':'Sin adyuvancia (I–IIA: cirugía).'}`,SRC.e_slnb+' · '+SRC.g_trat);
+      s+=li(`BSGC positiva (1 ganglio, sin satélites) → <b>${stageIII(T,'N1a')}</b>; 2–3 ganglios → ${stageIII(T,'N2a')}. Linfadenectomía solo con criterios (extracapsular, microsatélites, > 3 ganglios, > 2 niveles, inmunosupresión). Adyuvancia solo si depósito > 0,1 mm: nivolumab 480 mg/28 d o pembrolizumab 600 mg/6 sem × 1 año. TC + RM. Comité.`,SRC.g_linf+' · '+SRC.g_trat);
+      s+=li(`Eco/exploración positiva confirmada → cN+ → <b>${stageIII(T,'N1b')}</b> (1 ganglio): linfadenectomía terapéutica; si macroscópico, neoadyuvancia solo vía comité.`,SRC.g_cn+' · '+SRC.g_neo);
+      s+=li(`Imagen a distancia positiva → <b>IV</b>: manejo por oncología; si resecable, adyuvancia nivolumab 480 mg/28 d × 1 año.`,SRC.g_trat+' · '+SRC.g_quien);
+      s+=`</ul></div>`;
+    });
+    out.push(`<section class="block"><h2><span class="n">4</span>Estadios posibles según resultados</h2>${s}</section>`);
+  } else {
+    let t=[];
+    if(tipo==='inv'&&v.bsgc==='u'&&!clinPos&&!M1)t.push(li('Ampliación de márgenes pendiente según punto 2' + (needsSLNB?' + BSGC':'') + '.',SRC.g_amp));
+    else t.push(li('Ampliación de márgenes según punto 2 (si no realizada).',SRC.g_amp));
+    const stSet=scen.map(s=>s.st);
+    if(M1)t.push(li('Estadio IV: manejo por oncología. Si resecado: nivolumab 480 mg/28 d × 1 año. Irresecable: L1 según BRAF (ipi-nivo / anti-PD-1 o iBRAF+iMEK); ensayo PRIS-MEL-301 si HLA-A*02:01+.',SRC.g_trat+' · '+SRC.g_ac));
+    else if(stSet.some(s=>s.startsWith('III'))){
+      if(nodal==='slnb'){
+        if(v.dep==='gt')t.push(li('<b>Adyuvancia</b>: nivolumab 480 mg/28 d o pembrolizumab 600 mg/6 sem × 1 año (III resecado, N1 > 0,1 mm).',SRC.g_trat));
+        else if(v.dep==='le')t.push(li('Depósito ≤ 0,1 mm: la guía condiciona la adyuvancia a N1 > 0,1 mm → <b>sin adyuvancia</b> por guía; valorar en comité.',SRC.g_trat));
+        else {t.push(li('Adyuvancia pendiente del tamaño del depósito (> 0,1 mm).',SRC.g_trat));miss.push('Tamaño del depósito metastásico en el centinela (umbral 0,1 mm para adyuvancia).');}
+      } else if(nodal==='clin'){
+        t.push(li('Ganglio macroscópico: valorar <b>neoadyuvancia</b> (ipi-nivo, NADINA/PRADO) en reunión de secciones/comité SIEMPRE; no es estándar asistencial. Alternativa: linfadenectomía + adyuvancia nivolumab/pembrolizumab × 1 año.',SRC.g_neo+' · '+SRC.g_trat));
+      } else t.push(li('N1c (satelitosis): adyuvancia como estadio III resecado (nivolumab o pembrolizumab × 1 año); vía comité.',SRC.g_trat));
+      t.push(li('Ensayo del centro: fase I AMDB12 (biosimilar pembrolizumab) vs Keytruda en estadio II–III resecado.',SRC.g_ac));
+    }
+    else if(stSet.some(s=>/^II[BC]$/.test(s))){
+      t.push(li('<b>Adyuvancia</b>: pembrolizumab 600 mg/6 sem × 1 año (IIB–IIC resecado, KEYNOTE-716).',SRC.g_trat));
+      t.push(li('Ensayo del centro: fase I AMDB12 vs Keytruda en estadio II–III resecado.',SRC.g_ac));
+    }
+    else t.push(li('Sin adyuvancia (I–IIA / in situ).',SRC.g_trat));
+    if(stSet.some(s=>/^II[BC]$|^III/.test(s))&&!M1)t.push(li('Presentar en comité de melanoma.',SRC.g_neo));
+    out.push(`<section class="block"><h2><span class="n">${mode==='provisional'?'4':'2'}</span>Tratamiento</h2><ul>${t.join('')}</ul></section>`);
+  }
+
+  // ---------- 5/3 Seguimiento ----------
+  const FU={
+    '0':['Melanoma in situ','Cada 6 meses × 5 años, luego anual hasta 10 años','No de rutina','Sin imagen periódica; eco regional solo si exploración no fiable','Alta si no hay factores de riesgo'],
+    low:['Bajo riesgo (IA–IB)','Cada 6 meses × 5 años, luego anual hasta 10 años','IB: valorar S100 cada 6 meses × 5 años según disponibilidad','Sin imagen periódica; eco regional si palpación no fiable','Alta si no hay factores de riesgo'],
+    mid:['Riesgo intermedio (IIA)','Cada 4 meses × 2 años, semestral hasta 5, anual hasta 10','S100 cada 6 meses + hemograma, función hepática, LDH, bioquímica básica','Eco ganglionar regional en cada control × 2 años; sin otras imágenes','Alta a los 5 años si no hay factores de alto riesgo'],
+    high:['Alto riesgo (IIB, IIC, III)','Cada 3 meses × 5 años, luego anual hasta 10','Cada 3 meses × 2 años, luego cada 6 meses hasta el 5.º; S100 cada 6 meses; hemograma, hepática, LDH, bioquímica','Eco ganglionar cada 6 meses × 2 años intercalada con TC/RM; TC TAP cada 6 meses × 5 años; RM cerebral cada 6 meses × 2 años','Sin alta temprana; seguimiento hospitalario en UdM'],
+    iv:['Estadio IV resecado','Con cada ciclo o mensual','Con cada ciclo o mensual','Imagen cada 3 meses en tratamiento activo; cada 4–6 meses si finaliza','No']
+  };
+  const rows=[...new Set(scen.map(s=>M1?'iv':(s.st==='0'?'0':s.cls==='na'?'low':s.cls)))];
+  let tb=`<div class="tablewrap"><table><tr><th>Grupo</th><th>Clínico</th><th>Analítica / S100</th><th>Imagen</th><th>Alta</th></tr>`;
+  rows.forEach(r=>{const f=FU[r];tb+=`<tr><td><b>${f[0]}</b></td><td>${f[1]}</td><td>${f[2]}</td><td>${f[3]}</td><td>${f[4]}</td></tr>`;});
+  tb+=`</table></div>`;
+  let who='';
+  if(M1)who='M1: manejo y controles por oncología.';
+  else{
+    const tn=Ts.map(T=>T==='Tis'?0:T==='T0'?9:parseInt(T[1]));
+    const sub=Ts.map(T=>T.slice(2));
+    if(Ts.every(T=>T==='T0'))who='Primario desconocido: no consta quién sigue; comité.';
+    else if(Ts.some(T=>T==='T3b'||T.startsWith('T4')))who='≥ T3b: manejo por oncología, controles alternos con dermatología.';
+    else if(Ts.some(T=>T==='T3a'))who='T3a: la guía deja la frontera ambigua ("hasta < T3a dermatología ¿?"). Acordar en el servicio; de momento dermatología con alerta.';
+    else who='< T3a: manejo y controles por dermatología.';
+    if(Ts.some(T=>T.endsWith('?'))||Ts.length>1&&Ts.some(T=>T==='T3b'))who+=' (depende de la ulceración)';
+  }
+  out.push(`<section class="block"><h2><span class="n">${mode==='provisional'?'5':'3'}</span>Seguimiento ${mode==='provisional'?'a largo plazo si el TNM no cambia':'definitivo'} <span class="src">[${SRC.g_seg}]</span></h2>${tb}<ul>${li(who,SRC.g_quien)}</ul></section>`);
+
+  // ---------- Datos que faltan ----------
+  if(tipo==='inv'&&b<0.8&&v.ulc==='u')miss.unshift('Ulceración (decide T1a/T1b y la BSGC).');
+  if(v.loc==='cut'&&tipo!=='tx')miss.push('Confirmar localización (cara / acral / mucosa cambian margen y PET).');
+  if(mode==='definitivo'&&pend.length)miss.push('Pruebas exigidas pendientes: '+pend.join(', ')+'.');
+  const nm=mode==='provisional'?'6':'4';
+  out.push(`<section class="block"><h2><span class="n">${nm}</span>Datos que faltan</h2><ul>${miss.length?[...new Set(miss)].map(m=>li(m)).join(''):li('Ninguno relevante para la conducta.')}</ul></section>`);
+
+  out.push(`<footer>Fuentes: Guía HUSJR v1 05/2026; EADO 2024. La decisión clínica corresponde al dermatólogo responsable. Herramienta de apoyo: no sustituye la lectura de la guía ni el comité.</footer>`);
+  $('report').innerHTML=h+out.join('')+challenges();
+  try{localStorage.setItem('mel-husjr',JSON.stringify(v));}catch(e){}
+}
+
+function challenges(){
+  return `<details><summary>Retos y límites de esta guía (revisar antes de fiarse del resultado)</summary><ol>
+<li><b>Tabla de márgenes ilegible.</b> En el .docx la tabla de márgenes es una imagen; la herramienta aplica EADO (≤ 2 mm 1 cm; > 2 mm 2 cm). Transcribir la tabla del centro y sustituir.</li>
+<li><b>Bordes de banda.</b> La guía escribe "> 0,80" para BSGC pero "0,8–1,0" como T1b, y "1,01–2,00" dejando fuera 1,00. AJCC 8.ª redondea a 0,1 mm. Un Breslow de 0,8 · 1,0 · 2,0 · 4,0 mm cae en zona gris: la herramienta avisa y no decide sola.</li>
+<li><b>Regresión.</b> La frase "la presencia de regresión es FP positivo" está truncada. No se usa como criterio automático.</li>
+<li><b>Estadio III sin tabla propia.</b> La guía no incluye la tabla AJCC de subestadios IIIA–D; se toma de EADO. T0 con N1a/N2a no existe en AJCC → se marca "no consta".</li>
+<li><b>Conflicto IB.</b> El centro dice "bajo riesgo: no requiere pruebas"; EADO indica ecografía desde pT1b. Se muestran ambas y se aplica el centro.</li>
+<li><b>Frontera T3a.</b> "Hasta < T3a dermatología ¿?" y "si > T3b oncología": T3a y T3b quedan sin asignar de forma inequívoca. Fijarlo en el servicio.</li>
+<li><b>Umbral de adyuvancia 0,1 mm.</b> La guía condiciona la adyuvancia en III a N1 > 0,1 mm; con depósito ≤ 0,1 mm el resultado es "sin adyuvancia por guía" y obliga a comité.</li>
+<li><b>Criterio "> 2 niveles ganglionares"</b> para linfadenectomía no se captura en el formulario; hay que revisarlo a mano.</li>
+<li><b>Ganglio sospechoso sin confirmar.</b> Cambia el estadio solo tras PAAF/BAG. La herramienta no lo sube a cN+ hasta confirmación.</li>
+<li><b>M1 sin subcategoría ni LDH.</b> La guía no define M1a–d; el manejo pasa a oncología.</li>
+<li><b>Versionado.</b> Cada cambio de la guía exige revisar la lógica y actualizar el sello de versión de la cabecera. La fecha de la lógica no se actualiza sola.</li>
+<li><b>Privacidad.</b> No hay campos identificativos. Lo único que se guarda en el navegador son los valores del formulario (se borran con "Limpiar").</li>
+<li><b>Determinismo.</b> La herramienta no usa IA: cada frase sale de una regla fija con su fuente entre corchetes. Si un caso no encaja en las reglas, dirá "no consta" en vez de inventar.</li>
+</ol></details>`;
+}
+
+function syncVisibility(){
+  const tipo=$('tipo').value; const b=parseFloat(String($('breslow').value).replace(',','.'));
+  $('breslow').disabled=tipo!=='inv';
+  $('t1afactors').hidden=!(tipo==='inv'&&!isNaN(b)&&b<0.8);
+  $('cn').disabled=!($('expl').value==='pos'||$('eco').value==='pos');
+  const bp=$('bsgc').value==='pos'; ['bn','dep','ece'].forEach(k=>$(k).disabled=!bp);
+}
+F.forEach(k=>$(k).addEventListener('input',()=>{syncVisibility();}));
+['tipo','breslow','expl','eco','bsgc'].forEach(k=>$(k).addEventListener('change',syncVisibility));
+$('btnCalc').addEventListener('click',calc);
+$('breslow').addEventListener('keydown',e=>{if(e.key==='Enter')calc();});
+$('btnReset').addEventListener('click',()=>{F.forEach(k=>{const el=$(k);el.value=el.tagName==='INPUT'?'':el.options[0].value;});try{localStorage.removeItem('mel-husjr');}catch(e){}syncVisibility();$('report').innerHTML='';seedEmpty();});
+$('btnCopy').addEventListener('click',()=>{
+  const r=$('report');if(!r.textContent.trim())return;
+  const clone=r.cloneNode(true);const d=clone.querySelector('details');if(d)d.remove();
+  const txt=clone.innerText.replace(/\n{3,}/g,'\n\n');
+  const done=()=>{const t=$('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done).catch(()=>{const s=window.getSelection();const rg=document.createRange();rg.selectNodeContents(r);s.removeAllRanges();s.addRange(rg);});}
+});
+function seedEmpty(){$('report').innerHTML=`<section class="block"><h2>Cómo se usa</h2><ul><li>Introduce el Breslow y pulsa Calcular: informe <b>provisional</b> con escenarios si falta la ulceración.</li><li>Añade resultados de BSGC, ecografía o imagen: pasa a modo <b>definitivo</b> y marca "pendiente de…" si falta una prueba exigida.</li><li>Cada frase lleva su fuente entre corchetes. Lo que no está en la guía ni en EADO sale como "no consta".</li></ul></section>`+challenges();}
+let restored=false;
+try{const s=JSON.parse(localStorage.getItem('mel-husjr')||'null');if(s){F.forEach(k=>{if(s[k]!==undefined)$(k).value=s[k];});restored=true;}}catch(e){}
+syncVisibility();
+if(restored&&$('breslow').value)calc(); else { if(!restored){$('breslow').value='1.2';syncVisibility();} calc(); }
+})();
+</script>
+<script>
+(function(){
+  const tabs=['primario','ganglios','pruebas','informe'];
+  function go(t){
+    tabs.forEach(x=>{document.getElementById('tab-'+x).classList.toggle('active',x===t);});
+    document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('on',b.dataset.go===t));
+    if(t==='informe')document.getElementById('btnCalc').click();
+    document.querySelector('main').scrollTo({top:0});
+    try{localStorage.setItem('mel-tab',t);}catch(e){}
+  }
+  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+  try{const t=localStorage.getItem('mel-tab');if(t&&tabs.includes(t))go(t);}catch(e){}
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
